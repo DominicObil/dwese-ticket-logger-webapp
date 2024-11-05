@@ -24,7 +24,10 @@
           <li class="nav-item">
             <a class="nav-link" href="#" th:href="@{/locations}">Localizaciones</a>
           </li>
-
+          <!-- Nueva opción de Categoría -->
+          <li class="nav-item">
+            <a class="nav-link" href="#" th:href="@{/categories}">Categoría</a>
+          </li>
         </ul>
         <form th:action="@{/}" method="get" class="d-flex form-inline">
           <select name="lang" onchange="this.form.submit()" class="form-select">

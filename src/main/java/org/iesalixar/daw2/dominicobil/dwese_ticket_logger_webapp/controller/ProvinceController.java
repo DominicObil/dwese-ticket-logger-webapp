@@ -51,13 +51,8 @@ public class ProvinceController {
     public String listProvinces(Model model) {
         logger.info("Solicitando la lista de todas las provincias...");
         List<Province> listProvinces = null;
-        try {
-            listProvinces = provinceDAO.listAllProvinces();
-            logger.info("Se han cargado {} provincias.", listProvinces.size());
-        } catch (SQLException e) {
-            logger.error("Error al listar las provincias: {}", e.getMessage());
-            model.addAttribute("errorMessage", "Error al listar las provincias.");
-        }
+        listProvinces = provinceDAO.listAllProvinces();
+        logger.info("Se han cargado {} provincias.", listProvinces.size());
         model.addAttribute("listProvinces", listProvinces); // Pasar la lista de provincias al modelo
         return "province"; // Nombre de la plantilla Thymeleaf a renderizar
     }
@@ -76,13 +71,8 @@ public class ProvinceController {
 
 
         List<Region> listRegions = null; // Declarar la lista de regiones
-        try {
-            listRegions = regionDAO.listAllRegions(); // Cargar las regiones
-            logger.info("Se han cargado {} regiones.", listRegions.size());
-        } catch (SQLException e) {
-            logger.error("Error al listar las regiones: {}", e.getMessage());
-            model.addAttribute("errorMessage", "Error al listar las regiones.");
-        }
+        listRegions = regionDAO.listAllRegions(); // Cargar las regiones
+        logger.info("Se han cargado {} regiones.", listRegions.size());
         model.addAttribute("listRegions", listRegions); // Pasar la lista de regiones al modelo
         return "province-form"; // Nombre de la plantilla Thymeleaf para el formulario
     }
@@ -100,22 +90,12 @@ public class ProvinceController {
         logger.info("Mostrando formulario de edición para la provincia con ID {}", id);
         Province province = null;
         List<Region> listRegions = null;
-        try {
-            listRegions = regionDAO.listAllRegions();
-            logger.info("Se han cargado {} regiones.", listRegions.size());
-        } catch (SQLException e) {
-            logger.error("Error al listar las regiones: {}", e.getMessage());
-            model.addAttribute("errorMessage", "Error al listar las regiones.");
-        }
+        listRegions = regionDAO.listAllRegions();
+        logger.info("Se han cargado {} regiones.", listRegions.size());
         model.addAttribute("listRegions", listRegions); // Pasar la lista de regiones al modelo
-        try {
-            province = provinceDAO.getProvinceById(id);
-            if (province == null) {
-                logger.warn("No se encontró la provincia con ID {}", id);
-            }
-        } catch (SQLException e) {
-            logger.error("Error al obtener la provincia con ID {}: {}", id, e.getMessage());
-            model.addAttribute("errorMessage", "Error al obtener la provincia.");
+        province = provinceDAO.getProvinceById(id);
+        if (province == null) {
+            logger.warn("No se encontró la provincia con ID {}", id);
         }
         model.addAttribute("province", province);
         return "province-form"; // Nombre de la plantilla Thymeleaf para el formulario
@@ -133,31 +113,20 @@ public class ProvinceController {
     public String insertProvince(@Valid @ModelAttribute("province") Province province, BindingResult result, RedirectAttributes redirectAttributes, Locale locale, Model model) {
         logger.info("Insertando nueva provincia con código {}", province.getCode());
         List<Region> listRegions = null;
-        try {
-            listRegions = regionDAO.listAllRegions();
-            logger.info("Se han cargado {} regiones.", listRegions.size());
-        } catch (SQLException e) {
-            logger.error("Error al listar las regiones: {}", e.getMessage());
-            model.addAttribute("errorMessage", "Error al listar las regiones.");
-        }
+        listRegions = regionDAO.listAllRegions();
+        logger.info("Se han cargado {} regiones.", listRegions.size());
         model.addAttribute("listRegions", listRegions); // Pasar la lista de regiones al modelo
-        try {
-            if (result.hasErrors()) {
-                return "province-form";  // Devuelve el formulario para mostrar los errores de validación
-            }
-            if (provinceDAO.existsProvinceByCode(province.getCode())) {
-                logger.warn("El código de la provincia {} ya existe.", province.getCode());
-                String errorMessage = messageSource.getMessage("msg.province-controller.insert.codeExist", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/provinces/new";
-            }
-            provinceDAO.insertProvince(province);
-            logger.info("Provincia {} insertada con éxito.", province.getCode());
-        } catch (SQLException e) {
-            logger.error("Error al insertar la provincia {}: {}", province.getCode(), e.getMessage());
-            String errorMessage = messageSource.getMessage("msg.province-controller.insert.error", null, locale);
-            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+        if (result.hasErrors()) {
+            return "province-form";  // Devuelve el formulario para mostrar los errores de validación
         }
+        if (provinceDAO.existsProvinceByCode(province.getCode())) {
+            logger.warn("El código de la provincia {} ya existe.", province.getCode());
+            String errorMessage = messageSource.getMessage("msg.province-controller.insert.codeExist", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/provinces/new";
+        }
+        provinceDAO.insertProvince(province);
+        logger.info("Provincia {} insertada con éxito.", province.getCode());
         return "redirect:/provinces"; // Redirigir a la lista de provincias
     }
 
@@ -172,23 +141,17 @@ public class ProvinceController {
     @PostMapping("/update")
     public String updateProvince(@Valid @ModelAttribute("province") Province province, BindingResult result, RedirectAttributes redirectAttributes, Locale locale) {
         logger.info("Actualizando provincia con ID {}", province.getId());
-        try {
-            if (result.hasErrors()) {
-                return "province-form";  // Devuelve el formulario para mostrar los errores de validación
-            }
-            if (provinceDAO.existsProvinceByCodeAndNotId(province.getCode(), province.getId())) {
-                logger.warn("El código de la provincia {} ya existe para otra provincia.", province.getCode());
-                String errorMessage = messageSource.getMessage("msg.province-controller.update.codeExist", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/provinces/edit?id=" + province.getId();
-            }
-            provinceDAO.updateProvince(province);
-            logger.info("Provincia con ID {} actualizada con éxito.", province.getId());
-        } catch (SQLException e) {
-            logger.error("Error al actualizar la provincia con ID {}: {}", province.getId(), e.getMessage());
-            String errorMessage = messageSource.getMessage("msg.province-controller.update.error", null, locale);
-            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+        if (result.hasErrors()) {
+            return "province-form";  // Devuelve el formulario para mostrar los errores de validación
         }
+        if (provinceDAO.existsProvinceByCodeAndNotId(province.getCode(), province.getId())) {
+            logger.warn("El código de la provincia {} ya existe para otra provincia.", province.getCode());
+            String errorMessage = messageSource.getMessage("msg.province-controller.update.codeExist", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/provinces/edit?id=" + province.getId();
+        }
+        provinceDAO.updateProvince(province);
+        logger.info("Provincia con ID {} actualizada con éxito.", province.getId());
         return "redirect:/provinces"; // Redirigir a la lista de provincias
     }
 
@@ -203,13 +166,8 @@ public class ProvinceController {
     @PostMapping("/delete")
     public String deleteProvince(@RequestParam("id") int id, RedirectAttributes redirectAttributes) {
         logger.info("Eliminando provincia con ID {}", id);
-        try {
-            provinceDAO.deleteProvince(id);
-            logger.info("Provincia con ID {} eliminada con éxito.", id);
-        } catch (SQLException e) {
-            logger.error("Error al eliminar la provincia con ID {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al eliminar la provincia.");
-        }
+        provinceDAO.deleteProvince(id);
+        logger.info("Provincia con ID {} eliminada con éxito.", id);
         return "redirect:/provinces"; // Redirigir a la lista de provincias
     }
 

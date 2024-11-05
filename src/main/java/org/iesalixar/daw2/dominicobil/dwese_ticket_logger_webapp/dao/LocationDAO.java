@@ -14,34 +14,34 @@ public interface LocationDAO {
      * Lista todas las ubicaciones de la base de datos.
      * @return Lista de ubicaciones
      */
-    List<Location> listAllLocations() throws SQLException;
+    List<Location> listAllLocations();
 
     /**
      * Inserta una nueva ubicación en la base de datos.
      * @param location Ubicación a insertar
      */
-    void insertLocation(Location location) throws SQLException;
+    void insertLocation(Location location) ;
 
     /**
      * Actualiza una ubicación existente en la base de datos.
      * @param location Ubicación a actualizar
      */
-    void updateLocation(Location location) throws SQLException;
+    void updateLocation(Location location) ;
 
     /**
      * Elimina una ubicación de la base de datos.
      * @param id ID de la ubicación a eliminar
      */
-    void deleteLocation(int id) throws SQLException;
+    void deleteLocation(int id) ;
 
     /**
      * Obtiene una ubicación por su ID.
      * @param id ID de la ubicación
      * @return Ubicación correspondiente al ID
      */
-    Location getLocationById(int id) throws SQLException;
+    Location getLocationById(int id) ;
 
 
-    boolean existsLocationByCode(String address) throws SQLException;
-    boolean existsLocationByCodeAndNotId(String address, int id) throws SQLException;
+    boolean existsLocationByCode(String address);
+    boolean existsLocationByCodeAndNotId(String address, int id);
 }
