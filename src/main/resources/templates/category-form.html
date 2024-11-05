@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="head :: head ('Ticket Logger - Insertar/Actualizar Categoría')"></head>
+<head th:replace="fragments/head :: head ('Ticket Logger - Formulario de Categoría')"></head>
 <body>
 <!-- Incluir el fragmento del header -->
-<header th:replace="header :: header"></header>
+<header th:replace="fragments/header :: header"></header>
+
 <main class="container mt-5">
     <h1 th:text="${category.id == null ? 'Agregar Nueva Categoría' : 'Editar Categoría'}"></h1>
 
-    <!-- Muestra un mensaje de error si hay algún problema -->
+    <!-- Mensaje de error si existe -->
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-    <form th:action="${category.id == null} ? @{/categories/insert} : @{/categories/update(id=${category.id})}"
+    <!-- Mensaje de éxito si existe -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+
+    <form th:action="${category.id == null} ? @{/categories/insert} : @{/categories/update}"
           th:object="${category}" method="post" enctype="multipart/form-data" class="mt-4">
 
         <div class="mb-3">
             <label for="name" class="form-label" th:text="#{msg.category.name}">Nombre:</label>
-            <input type="text" th:field="*{name}" id="name" class="form-control" />
+            <input type="text" th:field="*{name}" id="name" class="form-control"/>
             <div th:if="${#fields.hasErrors('name')}" class="text-danger" th:errors="*{name}"></div>
         </div>
 
@@ -31,7 +35,7 @@
                 <option th:each="parent : ${listCategories}"
                         th:value="${parent.id}"
                         th:text="${parent.name}"
-                        th:selected="${parent.id == category.parent}"></option>
+                        th:selected="${parent.id == category.parent?.id}"></option>
             </select>
             <div th:if="${#fields.hasErrors('parent')}" class="text-danger" th:errors="*{parent}"></div>
         </div>
@@ -39,11 +43,11 @@
         <button type="submit" class="btn btn-primary" th:text="${category.id == null ? 'Crear' : 'Actualizar'}"></button>
     </form>
 
-    <!-- Volver a la lista de categorías -->
+    <!-- Botón para volver a la lista de categorías -->
     <a href="#" th:href="@{/categories}" class="btn btn-secondary mt-3" th:text="#{msg.category.returnback}"></a>
 </main>
 
 <!-- Incluir el fragmento del footer -->
-<footer th:replace="footer :: footer"></footer>
+<footer th:replace="fragments/footer :: footer"></footer>
 </body>
 </html>

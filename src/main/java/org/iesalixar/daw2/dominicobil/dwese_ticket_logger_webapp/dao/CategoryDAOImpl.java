@@ -28,29 +28,7 @@ public class CategoryDAOImpl implements CategoryDAO {
         return categories;
     }
 
-    @Override
-    public void deleteCategory(int id) {
-        logger.info("Deleting Category with id: {}", id);
-        Category category = entityManager.find(Category.class, id);
-        if (category != null) {
-            entityManager.remove(category);
-            logger.info("Deleted Category with id: {}", id);
-        } else {
-            logger.warn("Category with id: {} not found.", id);
-        }
-    }
 
-    @Override
-    public Category getCategoryById(int id) {
-        logger.info("Retrieving Category by id: {}", id);
-        Category category = entityManager.find(Category.class, id);
-        if (category != null) {
-            logger.info("Category retrieved: {} - {}", category.getName(), category.getImage());
-        } else {
-            logger.warn("No Category found with id: {}", id);
-        }
-        return category;
-    }
 
     @Override
     public void insertCategory(Category category) {
@@ -66,6 +44,31 @@ public class CategoryDAOImpl implements CategoryDAO {
         logger.info("Updated Category with id: {}", category.getId());
     }
 
+    @Override
+    public void deleteCategory(int id) {
+        logger.info("Deleting Category with id: {}", id);
+        Category category = entityManager.find(Category.class, id);
+        if (category != null) {
+            entityManager.remove(category);
+            logger.info("Deleted Category with id: {}", id);
+        } else {
+            logger.warn("Category with id: {} not found.", id);
+        }
+    }
+
+
+
+    @Override
+    public Category getCategoryById(int id) {
+        logger.info("Retrieving Category by id: {}", id);
+        Category category = entityManager.find(Category.class, id);
+        if (category != null) {
+            logger.info("Category retrieved: {} - {}", category.getName(), category.getImage());
+        } else {
+            logger.warn("No Category found with id: {}", id);
+        }
+        return category;
+    }
     @Override
     public boolean existsCategoryByNameAndNotId(String name, int id) {
         logger.info("Checking if Category with name: {} exists excluding id: {}", name, id);
@@ -91,3 +94,4 @@ public class CategoryDAOImpl implements CategoryDAO {
         return exists;
     }
 }
+

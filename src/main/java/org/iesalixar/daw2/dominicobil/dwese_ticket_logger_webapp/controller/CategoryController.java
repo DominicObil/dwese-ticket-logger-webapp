@@ -3,6 +3,7 @@ package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.controller;
 import jakarta.validation.Valid;
 import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.dao.CategoryDAO;
 import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Category;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Region;
 import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.services.FileStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ public class CategoryController {
     @GetMapping
     public String listCategories(Model model) {
         logger.info("Solicitando la lista de todas las categorias...");
+        List<Region> listRegions = null;
         List<Category> listCategories = categorieDAO.listAllCategory();
         logger.info("Se han cargado {} categorias.", listCategories.size());
         model.addAttribute("listCategories", listCategories);
