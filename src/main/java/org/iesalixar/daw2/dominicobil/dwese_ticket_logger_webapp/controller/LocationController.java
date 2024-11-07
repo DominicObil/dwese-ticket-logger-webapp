@@ -58,13 +58,8 @@ public class LocationController {
     public String listLocations(Model model) {
         logger.info("Solicitando la lista de todas las ubicaciones...");
         List<Location> listLocations = null;
-        try {
-            listLocations = locationDAO.listAllLocations();
-            logger.info("Se han cargado {} ubicaciones.", listLocations.size());
-        } catch (SQLException e) {
-            logger.error("Error al listar las ubicaciones: {}", e.getMessage());
-            model.addAttribute("errorMessage", "Error al listar las ubicaciones.");
-        }
+        listLocations = locationDAO.listAllLocations();
+        logger.info("Se han cargado {} ubicaciones.", listLocations.size());
         model.addAttribute("listLocations", listLocations);
         return "location";  // Vista para listar locations
     }
@@ -85,14 +80,9 @@ public class LocationController {
         // Cargar provincias y supermercados para seleccionar
         List<Province> listProvinces = null;
         List<Supermarket> listSupermarkets = null;
-        try {
-            listProvinces = provinceDAO.listAllProvinces();
-            listSupermarkets = supermarketDAO.listAllSupermarkets();
-            logger.info("Se han cargado {} provincias y {} supermercados.", listProvinces.size(), listSupermarkets.size());
-        } catch (SQLException e) {
-            logger.error("Error al listar provincias o supermercados: {}", e.getMessage());
-            model.addAttribute("errorMessage", "Error al listar provincias o supermercados.");
-        }
+        listProvinces = provinceDAO.listAllProvinces();
+        listSupermarkets = supermarketDAO.listAllSupermarkets();
+        logger.info("Se han cargado {} provincias y {} supermercados.", listProvinces.size(), listSupermarkets.size());
         model.addAttribute("listProvinces", listProvinces);
         model.addAttribute("listSupermarkets", listSupermarkets);
 
@@ -112,28 +102,18 @@ public class LocationController {
     public String showEditForm(@RequestParam("id") int id, Model model) {
         logger.info("Mostrando formulario de edición para la ubicación con ID {}", id);
         Location location = null;
-        try {
-            location = locationDAO.getLocationById(id);
-            if (location == null) {
-                logger.warn("No se encontró la ubicación con ID {}", id);
-            }
-        } catch (SQLException e) {
-            logger.error("Error al obtener la ubicación con ID {}: {}", id, e.getMessage());
-            model.addAttribute("errorMessage", "Error al obtener la ubicación.");
+        location = locationDAO.getLocationById(id);
+        if (location == null) {
+            logger.warn("No se encontró la ubicación con ID {}", id);
         }
 
 
         // Cargar provincias y supermercados para seleccionar
         List<Province> listProvinces = null;
         List<Supermarket> listSupermarkets = null;
-        try {
-            listProvinces = provinceDAO.listAllProvinces();
-            listSupermarkets = supermarketDAO.listAllSupermarkets();
-            logger.info("Se han cargado {} provincias y {} supermercados.", listProvinces.size(), listSupermarkets.size());
-        } catch (SQLException e) {
-            logger.error("Error al listar provincias o supermercados: {}", e.getMessage());
-            model.addAttribute("errorMessage", "Error al listar provincias o supermercados.");
-        }
+        listProvinces = provinceDAO.listAllProvinces();
+        listSupermarkets = supermarketDAO.listAllSupermarkets();
+        logger.info("Se han cargado {} provincias y {} supermercados.", listProvinces.size(), listSupermarkets.size());
 
 
         model.addAttribute("location", location);
@@ -162,14 +142,9 @@ public class LocationController {
         }
 
 
-        try {
-            locationDAO.insertLocation(location);
-            logger.info("Ubicación en {} insertada con éxito.", location.getAddress());
-            redirectAttributes.addFlashAttribute("successMessage", "Ubicación creada con éxito.");  // Mensaje de éxito
-        } catch (SQLException e) {
-            logger.error("Error al insertar la ubicación: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al insertar la ubicación.");
-        }
+        locationDAO.insertLocation(location);
+        logger.info("Ubicación en {} insertada con éxito.", location.getAddress());
+        redirectAttributes.addFlashAttribute("successMessage", "Ubicación creada con éxito.");  // Mensaje de éxito
         return "redirect:/locations";  // Redirigir a la lista de locations
     }
 
@@ -194,13 +169,8 @@ public class LocationController {
         }
 
 
-        try {
-            locationDAO.updateLocation(location);
-            logger.info("Ubicación con ID {} actualizada con éxito.", location.getId());
-        } catch (SQLException e) {
-            logger.error("Error al actualizar la ubicación con ID {}: {}", location.getId(), e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al actualizar la ubicación.");
-        }
+        locationDAO.updateLocation(location);
+        logger.info("Ubicación con ID {} actualizada con éxito.", location.getId());
         return "redirect:/locations"; // Redirigir a la lista de locations
     }
 
@@ -219,13 +189,8 @@ public class LocationController {
         logger.info("Eliminando ubicación con ID {}", id);
 
 
-        try {
-            locationDAO.deleteLocation(id);
-            logger.info("Ubicación con ID {} eliminada con éxito.", id);
-        } catch (SQLException e) {
-            logger.error("Error al eliminar la ubicación con ID {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al eliminar la ubicación.");
-        }
+        locationDAO.deleteLocation(id);
+        logger.info("Ubicación con ID {} eliminada con éxito.", id);
         return "redirect:/locations"; // Redirigir a la lista de locations
     }
 
