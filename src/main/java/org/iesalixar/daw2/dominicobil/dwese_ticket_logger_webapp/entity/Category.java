@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -23,16 +22,16 @@ public class Category {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "image", length = 500)
+    @Column(name = "image", nullable = true, length = 500) // Permite valores nulos y longitud máxima de 500
     private String image;
 
-    @ManyToOne
+    @ManyToOne(optional = true) // `optional = true` permite que `parent_id` sea `null`
     @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_parent_category"))
-    @JsonBackReference // Evita la recursión al serializar la relación padre
+    @JsonBackReference // Evita la recursión en la serialización JSON
     private Category parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = false)
-    @JsonManagedReference // Serializa la lista de subcategorías
+    @JsonManagedReference // Gestiona la serialización de subcategorías
     private List<Category> subcategories;
 
     @Override
@@ -41,8 +40,8 @@ public class Category {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", image='" + image + '\'' +
-                ", parent=" + (parent != null ? parent.getName() : "null") + // Solo muestra el nombre del padre
-                ", subcategoriesCount=" + (subcategories != null ? subcategories.size() : 0) + // Cantidad de subcategorías
+                ", parent=" + (parent != null ? parent.getId() : "null") + // Muestra solo el ID del padre
+                ", subcategoriesCount=" + (subcategories != null ? subcategories.size() : 0) +
                 '}';
     }
 }

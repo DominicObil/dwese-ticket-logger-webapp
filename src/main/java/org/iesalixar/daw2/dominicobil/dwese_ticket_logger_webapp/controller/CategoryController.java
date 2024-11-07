@@ -38,7 +38,6 @@ public class CategoryController {
     @GetMapping
     public String listCategories(Model model) {
         logger.info("Solicitando la lista de todas las categorias...");
-        List<Region> listRegions = null;
         List<Category> listCategories = categorieDAO.listAllCategory();
         logger.info("Se han cargado {} categorias.", listCategories.size());
         model.addAttribute("listCategories", listCategories);
@@ -49,6 +48,7 @@ public class CategoryController {
     public String showNewForm(Model model) {
         logger.info("Mostrando formulario para nueva categoria.");
         model.addAttribute("categorie", new Category());
+        List<Category> listCategories = categorieDAO.listAllCategory(); // Obtener la lista de Categorias
         model.addAttribute("listCategories", categorieDAO.listAllCategory());
         return "category-form";
     }
@@ -57,6 +57,7 @@ public class CategoryController {
     public String showEditForm(@RequestParam("id") int id, Model model) {
         logger.info("Mostrando formulario de edición para la categoria con ID {}", id);
         Category category = categorieDAO.getCategoryById(id);
+        List<Category> listCategories = categorieDAO.listAllCategory(); // Obtener la lista de categorias
         if (category == null) {
             logger.warn("No se encontró la categoria con ID {}", id);
             return "redirect:/categories"; // Redirigir si no se encuentra
@@ -126,7 +127,6 @@ public class CategoryController {
 
         categorieDAO.updateCategory(category);
         logger.info("Categoria con ID {} actualizada con éxito.", category.getId());
-        redirectAttributes.addFlashAttribute("successMessage", "Categoria actualizada con éxito.");
         return "redirect:/categories";
     }
 
@@ -142,7 +142,6 @@ public class CategoryController {
         }
 
         logger.info("Categoria con ID {} eliminada con éxito.", id);
-        redirectAttributes.addFlashAttribute("successMessage", "Categoria eliminada con éxito.");
         return "redirect:/categories";
     }
 }
