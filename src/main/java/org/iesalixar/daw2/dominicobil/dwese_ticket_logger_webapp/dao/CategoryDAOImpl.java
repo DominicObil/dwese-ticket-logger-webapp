@@ -14,11 +14,17 @@ import java.util.List;
 @Transactional
 public class CategoryDAOImpl implements CategoryDAO {
 
+    // Logger para registrar eventos importantes en el DAO
     private static final Logger logger = LoggerFactory.getLogger(CategoryDAOImpl.class);
 
+    // EntityManager para interactuar con la base de datos
     @PersistenceContext
     private EntityManager entityManager;
 
+    /**
+     * Lista todas las categorías de la base de datos.
+     * @return Lista de categorías
+     */
     @Override
     public List<Category> listAllCategory() {
         logger.info("Listing all categories from the database.");
@@ -28,8 +34,10 @@ public class CategoryDAOImpl implements CategoryDAO {
         return categories;
     }
 
-
-
+    /**
+     * Inserta una nueva categoría en la base de datos.
+     * @param category Categoría a insertar
+     */
     @Override
     public void insertCategory(Category category) {
         logger.info("Inserting Category with name: {} and image: {}", category.getName(), category.getImage());
@@ -37,6 +45,10 @@ public class CategoryDAOImpl implements CategoryDAO {
         logger.info("Inserted Category with ID: {}", category.getId());
     }
 
+    /**
+     * Actualiza una categoría existente en la base de datos.
+     * @param category Categoría a actualizar
+     */
     @Override
     public void updateCategory(Category category) {
         logger.info("Updating Category with id: {}", category.getId());
@@ -44,6 +56,10 @@ public class CategoryDAOImpl implements CategoryDAO {
         logger.info("Updated Category with id: {}", category.getId());
     }
 
+    /**
+     * Elimina una categoría de la base de datos.
+     * @param id ID de la categoría a eliminar
+     */
     @Override
     public void deleteCategory(int id) {
         logger.info("Deleting Category with id: {}", id);
@@ -56,8 +72,11 @@ public class CategoryDAOImpl implements CategoryDAO {
         }
     }
 
-
-
+    /**
+     * Recupera una categoría por su ID.
+     * @param id ID de la categoría a recuperar
+     * @return Categoría encontrada o null si no existe
+     */
     @Override
     public Category getCategoryById(int id) {
         logger.info("Retrieving Category by id: {}", id);
@@ -69,6 +88,15 @@ public class CategoryDAOImpl implements CategoryDAO {
         }
         return category;
     }
+
+    /**
+     * Verifica si una categoría con el nombre especificado ya existe en la base de datos,
+     * excluyendo una categoría con un ID específico.
+     * @param name el nombre de la categoría a verificar.
+     * @param id   el ID de la categoría a excluir de la verificación.
+     * @return true si una categoría con el nombre ya existe (y no es la categoría con el ID dado),
+     *         false de lo contrario.
+     */
     @Override
     public boolean existsCategoryByNameAndNotId(String name, int id) {
         logger.info("Checking if Category with name: {} exists excluding id: {}", name, id);
@@ -82,6 +110,11 @@ public class CategoryDAOImpl implements CategoryDAO {
         return exists;
     }
 
+    /**
+     * Verifica si una categoría con el nombre especificado ya existe en la base de datos.
+     * @param name el nombre de la categoría a verificar.
+     * @return true si una categoría con el nombre ya existe, false de lo contrario.
+     */
     @Override
     public boolean existsCategoryByName(String name) {
         logger.info("Checking if Category with name: {} exists", name);
@@ -94,4 +127,3 @@ public class CategoryDAOImpl implements CategoryDAO {
         return exists;
     }
 }
-
