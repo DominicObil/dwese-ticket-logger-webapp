@@ -47,10 +47,10 @@ public class CategoryController {
     @GetMapping("/new")
     public String showNewForm(Model model) {
         logger.info("Mostrando formulario para nueva categoria.");
-        model.addAttribute("categorie", new Category());
+        model.addAttribute("category", new Category()); // Crear un nuevo objeto Categoria
         List<Category> listCategories = categorieDAO.listAllCategory(); // Obtener la lista de Categorias
-        model.addAttribute("listCategories", categorieDAO.listAllCategory());
-        return "category-form";
+        model.addAttribute("listCategories", listCategories); // Pasar la lista de Categorias
+        return "category-form"; // Nombre de la plantilla Thymeleaf para el formulario
     }
 
     @GetMapping("/edit")
@@ -70,22 +70,23 @@ public class CategoryController {
     @PostMapping("/insert")
     public String insertCategory(@Valid @ModelAttribute("category") Category category, BindingResult result,
                                  @RequestParam("imageFile") MultipartFile imageFile,
-                                 RedirectAttributes redirectAttributes, Locale locale) {
+                                 RedirectAttributes redirectAttributes, Locale locale, Model model) {
 
-        logger.info("Insertando nueva categoria con nombre {}", category.getName());
-
+        // Verificar si hay errores en la validación
         if (result.hasErrors()) {
+            List<Category> listCategories = categorieDAO.listAllCategory();
+            model.addAttribute("listCategories", listCategories); // Pasar la lista de Categorias
             return "category-form"; // Devuelve el formulario para mostrar los errores de validación
         }
 
-        if (categorieDAO.existsCategoryByName(category.getName())) {
-            logger.warn("El nombre de la categoria {} ya existe.", category.getName());
-            String errorMessage = messageSource.getMessage("msg.categorie-controller.insert.NameExist", null, locale);
-            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-            return "redirect:/categories/new";
+        logger.info("Insertando nueva categoria con name {}", category.getName());
+
+        // Verificar y asignar categoría padre si existe
+        if (category.getParent() != null && category.getParent().getId() == null) {
+            category.setParent(null); // No asignar categoría padre
         }
 
-        // Guardar la imagen subida
+        // Guardar el archivo de imagen si se ha subido uno
         if (!imageFile.isEmpty()) {
             String fileName = fileStorageService.saveFile(imageFile);
             if (fileName != null) {
@@ -93,10 +94,10 @@ public class CategoryController {
             }
         }
 
-        categorieDAO.insertCategory(category);
+        categorieDAO.insertCategory(category); // Insertar la nueva categoria
+
         logger.info("Categoria {} insertada con éxito.", category.getName());
-        redirectAttributes.addFlashAttribute("successMessage", "Categoria creada con éxito.");
-        return "redirect:/categories";
+        return "redirect:/categories"; // Redirigir a la lista de categorias
     }
 
     @PostMapping("/update")
