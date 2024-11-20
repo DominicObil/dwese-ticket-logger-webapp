@@ -1,5 +1,4 @@
-package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity;
-
+package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities;
 
 
 import jakarta.persistence.*; // Anotaciones de JPA
@@ -33,7 +32,7 @@ public class Region {
     // Es una clave primaria autogenerada por la base de datos.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
 
     // Campo que almacena el código de la región, normalmente una cadena corta que identifica la región.
@@ -51,9 +50,10 @@ public class Region {
     private String name;
 
     // Relación uno a muchos con la entidad Province.
-// Una región puede tener muchas provincias.
-    @OneToMany(mappedBy = "region_id", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // Una región puede tener muchas provincias.
+    @OneToMany(mappedBy = "region", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Province> provinces;
+
 
     /**
      * Este es un constructor personalizado que no incluye el campo `id`.
@@ -66,5 +66,4 @@ public class Region {
         this.code = code;
         this.name = name;
     }
-
 }

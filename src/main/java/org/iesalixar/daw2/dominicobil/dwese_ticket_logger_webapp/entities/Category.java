@@ -1,4 +1,4 @@
-package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity;
+package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities;
 
 import jakarta.persistence.*; // Anotaciones de JPA
 import jakarta.validation.constraints.NotEmpty;
@@ -29,7 +29,7 @@ public class Category {
     // Es una clave primaria autogenerada por la base de datos.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     // Campo que almacena el nombre de la categoría, que no puede estar vacío y tiene una longitud máxima de 255 caracteres.
     @NotEmpty(message = "{msg.category.name.notEmpty}")

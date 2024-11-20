@@ -1,9 +1,8 @@
 package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.controller;
 
 import jakarta.validation.Valid;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.dao.CategoryDAO;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Category;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Region;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.repositories.CategoryRepository;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities.Category;
 import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.services.FileStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +17,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+
 @Controller
 @RequestMapping("/categories")
 public class CategoryController {
@@ -30,129 +31,122 @@ public class CategoryController {
     @Autowired
     private FileStorageService fileStorageService;
 
-
     @Autowired
-    private CategoryDAO categorieDAO;
+    private CategoryRepository categoryRepository;
 
     @GetMapping
     public String listCategories(Model model) {
-        // Solicitando la lista de todas las categorias...
         logger.info("Requesting the list of all categories...");
-        List<Category> listCategories = categorieDAO.listAllCategory();
-        // Se han cargado {} categorias.
+        List<Category> listCategories = categoryRepository.findAll();
         logger.info("Loaded {} categories.", listCategories.size());
         model.addAttribute("listCategories", listCategories);
-        return "category"; // Nombre de la plantilla Thymeleaf a renderizar
+        return "category";
     }
 
     @GetMapping("/new")
     public String showNewForm(Model model) {
-        // Mostrando formulario para nueva categoria.
         logger.info("Displaying form to create a new category.");
-        model.addAttribute("category", new Category()); // Crear un nuevo objeto Categoria
-        List<Category> listCategories = categorieDAO.listAllCategory(); // Obtener la lista de Categorias
-        model.addAttribute("listCategories", listCategories); // Pasar la lista de Categorias
-        return "category-form"; // Nombre de la plantilla Thymeleaf para el formulario
+        model.addAttribute("category", new Category());
+        model.addAttribute("listCategories", categoryRepository.findAll());
+        return "category-form";
     }
 
     @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") int id, Model model) {
-        // Mostrando formulario de edición para la categoria con ID {}
+    public String showEditForm(@RequestParam("id") Long id, Model model, RedirectAttributes redirectAttributes) {
         logger.info("Displaying edit form for the category with ID {}", id);
-        Category category = categorieDAO.getCategoryById(id);
-        List<Category> listCategories = categorieDAO.listAllCategory(); // Obtener la lista de categorias
-        if (category == null) {
-            // No se encontró la categoria con ID {}
-            logger.warn("Category with ID {} not found.");
-            return "redirect:/categories"; // Redirigir si no se encuentra
+        Optional<Category> categoryOptional = categoryRepository.findById(id);
+
+        if (categoryOptional.isEmpty()) {
+            logger.warn("Category with ID {} not found.", id);
+            redirectAttributes.addFlashAttribute("errorMessage", "Category not found.");
+            return "redirect:/categories";
         }
-        model.addAttribute("category", category);
-        model.addAttribute("listCategories", categorieDAO.listAllCategory());
+
+        model.addAttribute("category", categoryOptional.get());
+        model.addAttribute("listCategories", categoryRepository.findAll());
         return "category-form";
     }
 
     @PostMapping("/insert")
-    public String insertCategory(@Valid @ModelAttribute("category") Category category, BindingResult result,
-                                 @RequestParam("imageFile") MultipartFile imageFile,
-                                 RedirectAttributes redirectAttributes, Locale locale, Model model) {
+    public String insertCategory(
+            @Valid @ModelAttribute("category") Category category,
+            BindingResult result,
+            @RequestParam("imageFile") MultipartFile imageFile,
+            RedirectAttributes redirectAttributes, Locale locale, Model model) {
 
-        // Verificar si hay errores en la validación
         if (result.hasErrors()) {
-            List<Category> listCategories = categorieDAO.listAllCategory();
-            model.addAttribute("listCategories", listCategories); // Pasar la lista de Categorias
-            return "category-form"; // Devuelve el formulario para mostrar los errores de validación
+            model.addAttribute("listCategories", categoryRepository.findAll());
+            return "category-form";
         }
 
-        // Insertando nueva categoria con nombre {}
         logger.info("Inserting new category with name {}", category.getName());
 
-        // Verificar y asignar categoría padre si existe
         if (category.getParent() != null && category.getParent().getId() == null) {
-            category.setParent(null); // No asignar categoría padre
+            category.setParent(null);
         }
 
-        // Guardar el archivo de imagen si se ha subido uno
         if (!imageFile.isEmpty()) {
             String fileName = fileStorageService.saveFile(imageFile);
             if (fileName != null) {
-                category.setImage(fileName); // Guardar el nombre del archivo en la entidad
+                category.setImage(fileName);
             }
         }
 
-        categorieDAO.insertCategory(category); // Insertar la nueva categoria
-
-        // Categoria {} insertada con éxito.
+        categoryRepository.save(category);
         logger.info("Category {} inserted successfully.", category.getName());
-        return "redirect:/categories"; // Redirigir a la lista de categorias
+        return "redirect:/categories";
     }
 
     @PostMapping("/update")
-    public String updateCategory(@Valid @ModelAttribute("categorie") Category category, BindingResult result,
-                                 @RequestParam("imageFile") MultipartFile imageFile,
-                                 RedirectAttributes redirectAttributes, Locale locale) {
+    public String updateCategory(
+            @Valid @ModelAttribute("category") Category category,
+            BindingResult result,
+            @RequestParam("imageFile") MultipartFile imageFile,
+            RedirectAttributes redirectAttributes, Locale locale) {
 
-        // Actualizando categoria con ID {}
         logger.info("Updating category with ID {}", category.getId());
 
         if (result.hasErrors()) {
-            return "category-form"; // Devuelve el formulario para mostrar los errores de validación
+            return "category-form";
         }
 
-        if (categorieDAO.existsCategoryByNameAndNotId(category.getName(), category.getId())) {
-            // El nombre de la categoria {} ya existe para otra categoria.
-            logger.warn("Category name {} already exists for another category.");
+        if (categoryRepository.existsCategoryByNameAndNotId(category.getName(), category.getId())) {
+            logger.warn("Category name {} already exists for another category.", category.getName());
             String errorMessage = messageSource.getMessage("msg.categorie-controller.update.NameExist", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
             return "redirect:/categories/edit?id=" + category.getId();
         }
 
-        // Guardar la imagen subida
         if (!imageFile.isEmpty()) {
             String fileName = fileStorageService.saveFile(imageFile);
             if (fileName != null) {
-                category.setImage(fileName); // Guardar el nombre del archivo en la entidad
+                category.setImage(fileName);
             }
         }
 
-        categorieDAO.updateCategory(category);
-        // Categoria con ID {} actualizada con éxito.
+        categoryRepository.save(category);
         logger.info("Category with ID {} updated successfully.", category.getId());
         return "redirect:/categories";
     }
 
-
     @PostMapping("/delete")
-    public String deleteCategorie(@RequestParam("id") int id, RedirectAttributes redirectAttributes) {
-        // Eliminando categoria con ID {}
+    public String deleteCategory(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
         logger.info("Deleting category with ID {}", id);
-        Category category = categorieDAO.getCategoryById(id);
-        categorieDAO.deleteCategory(id);
-        // Eliminar la imagen asociada, si existe
+        Optional<Category> categoryOptional = categoryRepository.findById(id);
+
+        if (categoryOptional.isEmpty()) {
+            logger.warn("Category with ID {} not found.", id);
+            redirectAttributes.addFlashAttribute("errorMessage", "Category not found.");
+            return "redirect:/categories";
+        }
+
+        Category category = categoryOptional.get();
+        categoryRepository.deleteById(id);
+
         if (category.getImage() != null && !category.getImage().isEmpty()) {
             fileStorageService.deleteFile(category.getImage());
         }
 
-        // Categoria con ID {} eliminada con éxito.
         logger.info("Category with ID {} deleted successfully.", id);
         return "redirect:/categories";
     }

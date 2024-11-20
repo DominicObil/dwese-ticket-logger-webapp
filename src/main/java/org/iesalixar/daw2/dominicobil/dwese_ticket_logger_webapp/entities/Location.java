@@ -1,10 +1,9 @@
-package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity;
+package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities;
 
 
 import jakarta.persistence.*; // Anotaciones de JPA
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -27,7 +26,7 @@ public class Location {
     // Identificador único de la ubicación. Es autogenerado y clave primaria.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
 
     // Dirección de la ubicación. No puede estar vacía.
@@ -72,7 +71,6 @@ public class Location {
     }
 
     public Location(Integer id, String address, String city, Supermarket supermarket, Province province) {
-        this.id = id;
         this.address = address;
         this.city = city;
         this.supermarket = supermarket;
