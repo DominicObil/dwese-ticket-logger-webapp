@@ -1,8 +1,9 @@
+
 package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.controller;
 
 import jakarta.validation.Valid;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.dao.SupermarketDAO;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Supermarket;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities.Supermarket;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.repositories.SupermarketRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,146 +15,120 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
-/**
- * Controlador que maneja las operaciones CRUD para la entidad `Supermarket`.
- * Utiliza `SupermarketDAO` para interactuar con la base de datos.
- */
+import java.util.Optional;
+
 @Controller
 @RequestMapping("/supermarkets")
 public class SupermarketController {
 
+    @Autowired
+    private MessageSource messageSource;
 
     private static final Logger logger = LoggerFactory.getLogger(SupermarketController.class);
 
-    // DAO para gestionar las operaciones de los supermercados en la base de datos
     @Autowired
-    private SupermarketDAO supermarketDAO;
+    private SupermarketRepository supermarketRepository;
 
-
-    /**
-     * Lista todos los supermercados y los pasa como atributo al modelo para que sean
-     * accesibles en la vista `supermarket.html`.
-     *
-     * @param model Objeto del modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para renderizar la lista de supermercados.
-     */
     @GetMapping
     public String listSupermarkets(Model model) {
-        logger.info("Solicitando la lista de todos los supermercados...");
-        List<Supermarket> listSupermarkets = null;
-        listSupermarkets = supermarketDAO.listAllSupermarkets();
-        logger.info("Se han cargado {} supermercados.", listSupermarkets.size());
+        logger.info("Requesting the list of all supermarkets...");
+        List<Supermarket> listSupermarkets = supermarketRepository.findAll();
+        logger.info("Loaded {} supermarkets.", listSupermarkets.size());
         model.addAttribute("listSupermarkets", listSupermarkets);
-        return "supermarket"; // Nombre de la plantilla Thymeleaf a renderizar
+        return "supermarket";
     }
 
-
-    /**
-     * Muestra el formulario para crear un nuevo supermercado.
-     *
-     * @param model Modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para el formulario.
-     */
     @GetMapping("/new")
     public String showNewForm(Model model) {
-        logger.info("Mostrando formulario para nuevo supermercado.");
-        model.addAttribute("supermarket", new Supermarket()); // Crear un nuevo objeto Supermarket
-        return "supermarket-form"; // Nombre de la plantilla Thymeleaf para el formulario
+        logger.info("Displaying form to create a new supermarket.");
+        model.addAttribute("supermarket", new Supermarket());
+        return "supermarket-form";
     }
 
-
-    /**
-     * Muestra el formulario para editar un supermercado existente.
-     *
-     * @param id    ID del supermercado a editar.
-     * @param model Modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para el formulario.
-     */
     @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") int id, Model model) {
-        logger.info("Mostrando formulario de edición para el supermercado con ID {}", id);
-        Supermarket supermarket = null;
-        supermarket = supermarketDAO.getSupermarketById(id);
-        if (supermarket == null) {
-            logger.warn("No se encontró el supermercado con ID {}", id);
+    public String showEditForm(@RequestParam("id") Long id, Model model, RedirectAttributes redirectAttributes) {
+        logger.info("Displaying edit form for the supermarket with ID {}", id);
+        Optional<Supermarket> supermarketOptional = supermarketRepository.findById(id);
+
+        if (supermarketOptional.isEmpty()) {
+            logger.warn("Supermarket with ID {} not found.", id);
+            redirectAttributes.addFlashAttribute("errorMessage", "Supermarket not found.");
+            return "redirect:/supermarkets";
         }
-        model.addAttribute("supermarket", supermarket);
-        return "supermarket-form"; // Nombre de la plantilla Thymeleaf para el formulario
+
+        model.addAttribute("supermarket", supermarketOptional.get());
+        return "supermarket-form";
     }
 
-    @Autowired
-    private MessageSource messageSource;
-    /**
-     * Inserta un nuevo supermercado en la base de datos.
-     *
-     * @param supermarket          Objeto que contiene los datos del formulario.
-     * @param redirectAttributes   Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de supermercados.
-     */
     @PostMapping("/insert")
-    public String insertSupermarket(@Valid @ModelAttribute("supermarket") Supermarket supermarket, BindingResult result, RedirectAttributes redirectAttributes, Locale locale, Model model) {
-        logger.info("Insertando nuevo supermercado con nombre {}", supermarket.getName());
+    public String insertSupermarket(
+            @Valid @ModelAttribute("supermarket") Supermarket supermarket,
+            BindingResult result,
+            RedirectAttributes redirectAttributes, Locale locale) {
+
         if (result.hasErrors()) {
-            return "supermarket-form";  // Devuelve el formulario para mostrar los errores de validación
+            return "supermarket-form";
         }
-        if (supermarketDAO.existsSupermarketByName(supermarket.getName())) {
-            logger.warn("El nombre del supermercado {} ya existe.", supermarket.getName());
+
+        logger.info("Inserting new supermarket with name {}", supermarket.getName());
+
+        if (supermarketRepository.existsSupermarketByName(supermarket.getName())) {
+            logger.warn("Supermarket name {} already exists.", supermarket.getName());
             String errorMessage = messageSource.getMessage("msg.supermarket-controller.insert.nameExist", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
             return "redirect:/supermarkets/new";
         }
-        supermarketDAO.insertSupermarket(supermarket);
-        logger.info("Supermercado {} insertado con éxito.", supermarket.getName());
-        return "redirect:/supermarkets"; // Redirigir a la lista de supermercados
+
+        supermarketRepository.save(supermarket);
+        logger.info("Supermarket {} inserted successfully.", supermarket.getName());
+        return "redirect:/supermarkets";
     }
 
-
-    /**
-     * Actualiza un supermercado existente en la base de datos.
-     *
-     * @param supermarket          Objeto que contiene los datos del formulario.
-     * @param redirectAttributes    Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de supermercados.
-     */
     @PostMapping("/update")
-    public String updateSupermarket(@Valid @ModelAttribute("supermarket") Supermarket supermarket, BindingResult result, RedirectAttributes redirectAttributes, Locale locale) {
-        logger.info("Actualizando supermercado con ID {}", supermarket.getId());
+    public String updateSupermarket(
+            @Valid @ModelAttribute("supermarket") Supermarket supermarket,
+            BindingResult result,
+            RedirectAttributes redirectAttributes, Locale locale) {
+
+        logger.info("Updating supermarket with ID {}", supermarket.getId());
+
         if (result.hasErrors()) {
-            return "supermarket-form";  // Devuelve el formulario para mostrar los errores de validación
+            return "supermarket-form";
         }
-        if (supermarketDAO.existsSupermarketByNameAndNotId(supermarket.getName(), supermarket.getId())) {
-            logger.warn("El nombre del supermercado {} ya existe para otro supermercado.", supermarket.getName());
+
+        if (supermarketRepository.existsSupermarketByNameAndNotId(supermarket.getName(), supermarket.getId())) {
+            logger.warn("Supermarket name {} already exists for another supermarket.", supermarket.getName());
             String errorMessage = messageSource.getMessage("msg.supermarket-controller.update.nameExist", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
             return "redirect:/supermarkets/edit?id=" + supermarket.getId();
         }
-        supermarketDAO.updateSupermarket(supermarket);
-        logger.info("Supermercado con ID {} actualizado con éxito.", supermarket.getId());
-        return "redirect:/supermarkets"; // Redirigir a la lista de supermercados
+
+        supermarketRepository.save(supermarket);
+        logger.info("Supermarket with ID {} updated successfully.", supermarket.getId());
+        return "redirect:/supermarkets";
     }
 
-
-    /**
-     * Elimina un supermercado de la base de datos.
-     *
-     * @param id                 ID del supermercado a eliminar.
-     * @param redirectAttributes Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de supermercados.
-     */
     @PostMapping("/delete")
-    public String deleteSupermarket(@RequestParam("id") int id, RedirectAttributes redirectAttributes) {
-        logger.info("Eliminando supermercado con ID {}", id);
-        try {
-            supermarketDAO.deleteSupermarket(id);
-            logger.info("Supermercado con ID {} eliminado con éxito.", id);
-        } catch (DataIntegrityViolationException e) {
-            logger.error("Error al eliminar el supermercado con ID {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al eliminar el supermercado.");
+    public String deleteSupermarket(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+        logger.info("Deleting supermarket with ID {}", id);
+        Optional<Supermarket> supermarketOptional = supermarketRepository.findById(id);
+
+        if (supermarketOptional.isEmpty()) {
+            logger.warn("Supermarket with ID {} not found.", id);
+            redirectAttributes.addFlashAttribute("errorMessage", "Supermarket not found.");
+            return "redirect:/supermarkets";
         }
-        return "redirect:/supermarkets"; // Redirigir a la lista de supermercados
+
+        try {
+            supermarketRepository.deleteById(id);
+            logger.info("Supermarket with ID {} deleted successfully.", id);
+        } catch (DataIntegrityViolationException e) {
+            logger.error("Error deleting supermarket with ID {}: {}", id, e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Error deleting supermarket.");
+        }
+
+        return "redirect:/supermarkets";
     }
 }

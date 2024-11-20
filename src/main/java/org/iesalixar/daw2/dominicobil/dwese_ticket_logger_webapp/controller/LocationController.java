@@ -1,12 +1,12 @@
 package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.controller;
 
 import jakarta.validation.Valid;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.dao.LocationDAO;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.dao.ProvinceDAO;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.dao.SupermarketDAO;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Location;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Province;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Supermarket;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.repositories.LocationRepository;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.repositories.ProvinceRepository;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.repositories.SupermarketRepository;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities.Location;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities.Province;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities.Supermarket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,185 +17,120 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
-/**
- * Controlador que maneja las operaciones CRUD para la entidad `Location`.
- * Utiliza `LocationDAO` para interactuar con la base de datos.
- */
 @Controller
 @RequestMapping("/locations")
 public class LocationController {
 
     private static final Logger logger = LoggerFactory.getLogger(LocationController.class);
 
-
-    // DAO para gestionar las operaciones de las Localizacion en la base de datos
     @Autowired
-    private LocationDAO locationDAO;
+    private LocationRepository locationRepository;
 
     @Autowired
-    private SupermarketDAO supermarketDAO;
+    private SupermarketRepository supermarketRepository;
 
-    // DAO para gestionar las operaciones de las provincias en la base de datos
     @Autowired
-    private ProvinceDAO provinceDAO;
-
+    private ProvinceRepository provinceRepository;
 
     @Autowired
     private MessageSource messageSource;
 
-    /**
-     * Lista todas las ubicaciones y las pasa como atributo al modelo para que sean
-     * accesibles en la vista `location.html`.
-     *
-     * @param model Objeto del modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para renderizar la lista de ubicaciones.
-     */
     @GetMapping
     public String listLocations(Model model) {
-        logger.info("Solicitando la lista de todas las ubicaciones...");
-        List<Location> listLocations = null;
-        listLocations = locationDAO.listAllLocations();
-        logger.info("Se han cargado {} ubicaciones.", listLocations.size());
+        logger.info("Requesting the list of all locations...");
+        List<Location> listLocations = locationRepository.findAll();
+        logger.info("Loaded {} locations.", listLocations.size());
         model.addAttribute("listLocations", listLocations);
-        return "location";  // Vista para listar locations
+        return "location";
     }
 
-
-    /**
-     * Muestra el formulario para crear una nueva ubicación.
-     *
-     * @param model Modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para el formulario.
-     */
     @GetMapping("/new")
     public String showNewForm(Model model) {
-        logger.info("Mostrando formulario para nueva ubicación.");
+        logger.info("Displaying form to create a new location.");
         model.addAttribute("location", new Location());
-
-
-        // Cargar provincias y supermercados para seleccionar
-        List<Province> listProvinces = null;
-        List<Supermarket> listSupermarkets = null;
-        listProvinces = provinceDAO.listAllProvinces();
-        listSupermarkets = supermarketDAO.listAllSupermarkets();
-        logger.info("Se han cargado {} provincias y {} supermercados.", listProvinces.size(), listSupermarkets.size());
-        model.addAttribute("listProvinces", listProvinces);
-        model.addAttribute("listSupermarkets", listSupermarkets);
-
-
-        return "location-form";  // Vista para el formulario
-    }
-
-
-    /**
-     * Muestra el formulario para editar una ubicación existente.
-     *
-     * @param id    ID de la ubicación a editar.
-     * @param model Modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para el formulario.
-     */
-    @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") int id, Model model) {
-        logger.info("Mostrando formulario de edición para la ubicación con ID {}", id);
-        Location location = null;
-        location = locationDAO.getLocationById(id);
-        if (location == null) {
-            logger.warn("No se encontró la ubicación con ID {}", id);
-        }
-
-
-        // Cargar provincias y supermercados para seleccionar
-        List<Province> listProvinces = null;
-        List<Supermarket> listSupermarkets = null;
-        listProvinces = provinceDAO.listAllProvinces();
-        listSupermarkets = supermarketDAO.listAllSupermarkets();
-        logger.info("Se han cargado {} provincias y {} supermercados.", listProvinces.size(), listSupermarkets.size());
-
-
-        model.addAttribute("location", location);
-        model.addAttribute("listProvinces", listProvinces);
-        model.addAttribute("listSupermarkets", listSupermarkets);
+        model.addAttribute("listProvinces", provinceRepository.findAll());
+        model.addAttribute("listSupermarkets", supermarketRepository.findAll());
         return "location-form";
     }
 
+    @GetMapping("/edit")
+    public String showEditForm(@RequestParam("id") Long id, Model model) {
+        logger.info("Displaying edit form for the location with ID {}", id);
+        Optional<Location> location = locationRepository.findById(id);
 
-    /**
-     * Inserta una nueva ubicación en la base de datos.
-     *
-     * @param location           Objeto que contiene los datos del formulario.
-     * @param result             Resultado de la validación.
-     * @param redirectAttributes Atributos para mensajes flash de redirección.
-     * @param locale             Locale para los mensajes de error.
-     * @return Redirección a la lista de ubicaciones.
-     */
-    @PostMapping("/insert")
-    public String insertLocation(@Valid @ModelAttribute("location") Location location, BindingResult result, RedirectAttributes redirectAttributes, Locale locale) {
-        logger.info("Insertando nueva ubicación en {}", location.getAddress());
-
-
-        if (result.hasErrors()) {
-            return "location-form";  // Retorna al formulario si hay errores
+        if (location.isEmpty()) {
+            logger.warn("Location with ID {} not found.", id);
+            return "redirect:/locations";
         }
 
-
-        locationDAO.insertLocation(location);
-        logger.info("Ubicación en {} insertada con éxito.", location.getAddress());
-        redirectAttributes.addFlashAttribute("successMessage", "Ubicación creada con éxito.");  // Mensaje de éxito
-        return "redirect:/locations";  // Redirigir a la lista de locations
+        model.addAttribute("location", location.get());
+        model.addAttribute("listProvinces", provinceRepository.findAll());
+        model.addAttribute("listSupermarkets", supermarketRepository.findAll());
+        return "location-form";
     }
 
-
-
-    /**
-     * Actualiza una ubicación existente en la base de datos.
-     *
-     * @param location           Objeto que contiene los datos del formulario.
-     * @param result             Resultado de la validación.
-     * @param redirectAttributes Atributos para mensajes flash de redirección.
-     * @param locale             Locale para los mensajes de error.
-     * @return Redirección a la lista de ubicaciones.
-     */
-    @PostMapping("/update")
-    public String updateLocation(@Valid @ModelAttribute("location") Location location, BindingResult result, RedirectAttributes redirectAttributes, Locale locale) {
-        logger.info("Actualizando ubicación con ID {}", location.getId());
-
+    @PostMapping("/insert")
+    public String insertLocation(@Valid @ModelAttribute("location") Location location, BindingResult result,
+                                 RedirectAttributes redirectAttributes, Locale locale) {
+        logger.info("Inserting a new location: {}", location.getAddress());
 
         if (result.hasErrors()) {
             return "location-form";
         }
 
+        if (locationRepository.existsLocationByAddress(location.getAddress())) {
+            logger.warn("Location code {} already exists.", location.getAddress());
+            String errorMessage = messageSource.getMessage("msg.location-controller.insert.CodeExists", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/locations/new";
+        }
 
-        locationDAO.updateLocation(location);
-        logger.info("Ubicación con ID {} actualizada con éxito.", location.getId());
-        return "redirect:/locations"; // Redirigir a la lista de locations
+        locationRepository.save(location);
+        logger.info("Location {} inserted successfully.", location.getAddress());
+        redirectAttributes.addFlashAttribute("successMessage", "Location created successfully.");
+        return "redirect:/locations";
     }
 
+    @PostMapping("/update")
+    public String updateLocation(@Valid @ModelAttribute("location") Location location, BindingResult result,
+                                 RedirectAttributes redirectAttributes, Locale locale) {
+        logger.info("Updating location with ID {}", location.getId());
 
+        if (result.hasErrors()) {
+            return "location-form";
+        }
 
+        if (locationRepository.existsLocationByAddressndNotId(location.getAddress(), location.getId())) {
+            logger.warn("Location code {} already exists for another location.", location.getAddress());
+            String errorMessage = messageSource.getMessage("msg.location-controller.update.CodeExists", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/locations/edit?id=" + location.getId();
+        }
 
-    /**
-     * Elimina una ubicación de la base de datos.
-     *
-     * @param id                 ID de la ubicación a eliminar.
-     * @param redirectAttributes Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de ubicaciones.
-     */
+        locationRepository.save(location);
+        logger.info("Location with ID {} updated successfully.", location.getId());
+        redirectAttributes.addFlashAttribute("successMessage", "Location updated successfully.");
+        return "redirect:/locations";
+    }
+
     @PostMapping("/delete")
-    public String deleteLocation(@RequestParam("id") int id, RedirectAttributes redirectAttributes) {
-        logger.info("Eliminando ubicación con ID {}", id);
+    public String deleteLocation(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+        logger.info("Deleting location with ID {}", id);
+        Optional<Location> location = locationRepository.findById(id);
 
+        if (location.isEmpty()) {
+            logger.warn("Location with ID {} not found.", id);
+            redirectAttributes.addFlashAttribute("errorMessage", "Location not found.");
+            return "redirect:/locations";
+        }
 
-        locationDAO.deleteLocation(id);
-        logger.info("Ubicación con ID {} eliminada con éxito.", id);
-        return "redirect:/locations"; // Redirigir a la lista de locations
+        locationRepository.deleteById(id);
+        logger.info("Location with ID {} deleted successfully.", id);
+        redirectAttributes.addFlashAttribute("successMessage", "Location deleted successfully.");
+        return "redirect:/locations";
     }
-
-
-
 }
-
-

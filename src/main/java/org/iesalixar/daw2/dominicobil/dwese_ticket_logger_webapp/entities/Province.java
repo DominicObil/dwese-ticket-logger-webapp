@@ -1,4 +1,5 @@
-package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity;
+package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entities;
+
 
 import jakarta.persistence.*; // Anotaciones de JPA
 import jakarta.validation.constraints.NotEmpty;
@@ -7,7 +8,6 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.entity.Region;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ public class Province {
     // Campo que almacena el identificador único de la provincia. Es autogenerado y clave primaria.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
 
     // Campo que almacena el código de la provincia, normalmente una cadena corta que identifica la provincia.
@@ -49,16 +49,16 @@ public class Province {
     @Column(name = "name", nullable = false, length = 100) // Define la columna correspondiente en la tabla.
     private String name;
 
+    // Relación uno a muchos con la entidad `Location`. Una provincia puede tener muchas ubicaciones.
+    @OneToMany(mappedBy = "province", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Location> locations;
+
 
     // Relación con la entidad `Region`, representando la comunidad autónoma a la que pertenece la provincia.
     @NotNull(message = "{msg.province.region.notNull}")
     @ManyToOne(fetch = FetchType.LAZY) // Relación de muchas provincias a una región.
     @JoinColumn(name = "region_id", nullable = false) // Clave foránea en la tabla provinces que referencia a la tabla regions.
-    private Region region_id;
-
-    // Relación uno a muchos con la entidad `Location`. Una provincia puede tener muchas ubicaciones.
-    @OneToMany(mappedBy = "province", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Location> locations;
+    private Region region;
 
 
     /**
@@ -66,11 +66,11 @@ public class Province {
      * cuando el `id` aún no se ha generado (por ejemplo, antes de insertarla en la base de datos).
      * @param code Código de la provincia.
      * @param name Nombre de la provincia.
-     * @param region_id La región a la que pertenece la provincia.
+     * @param region La región a la que pertenece la provincia.
      */
-    public Province(String code, String name, Region region_id) {
+    public Province(String code, String name, Region region) {
         this.code = code;
         this.name = name;
-        this.region_id = region_id;
+        this.region = region;
     }
 }
