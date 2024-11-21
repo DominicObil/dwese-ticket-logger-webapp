@@ -1,10 +1,16 @@
 package org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.config;
 
 
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.handlers.CustomOAuth2FailureHandler;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.handlers.CustomOAuth2SuccessHandler;
+import org.iesalixar.daw2.dominicobil.dwese_ticket_logger_webapp.services.CustomUserDetailsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -17,13 +23,26 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 
+
 /**
  * Configura la seguridad de la aplicación, definiendo autenticación y autorización
  * para diferentes roles de usuario, y gestionando la política de sesiones.
  */
+
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)  // Activa la seguridad basada en métodos
 public class SecurityConfig {
+
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    private CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
+
+
+    @Autowired
+    private CustomOAuth2FailureHandler customOAuth2FailureHandler;
 
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
@@ -55,11 +74,28 @@ public class SecurityConfig {
                 })
                 .formLogin(form -> {
                     logger.debug("Configurando formulario de inicio de sesión");
-                    form.defaultSuccessUrl("/");
+                    form
+
+                            .loginPage("/login")
+                            .defaultSuccessUrl("/")
+                            .permitAll();
                 })
+
+                .oauth2Login(oauth2 -> {
+                    logger.debug("Configurando login con OAuth2");
+                    oauth2
+                            .loginPage("/login")        // Reutiliza la página de inicio de sesión personalizada
+                            .successHandler(customOAuth2SuccessHandler) // Usa el Success Handler personalizado
+                            .failureHandler(customOAuth2FailureHandler); // Handler para fallo en autenticación
+
+                })
+
+
                 .sessionManagement(session -> {
                     logger.debug("Configurando política de gestión de sesiones");
                     session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED); // Usa sesiones cuando sea necesario
+
+
                 });
 
 
@@ -69,42 +105,17 @@ public class SecurityConfig {
 
 
     /**
-     * Configura los detalles de usuario en memoria para pruebas y desarrollo, asignando
-     * roles específicos a cada usuario.
+     * Configura el proveedor de autenticación para usar el servicio de detalles de usuario
+     * personalizado y el codificador de contraseñas.
      *
-     * @return una instancia de {@link UserDetailsService} que proporciona autenticación en memoria.
+     * @return una instancia de {@link DaoAuthenticationProvider} para la autenticación.
      */
     @Bean
-    public UserDetailsService userDetailsService() {
-        logger.info("Entrando en el método userDetailsService");
-
-
-        logger.debug("Creando usuario con rol USER");
-        UserDetails user = User.builder()
-                .username("user")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-                .build();
-
-
-        logger.debug("Creando usuario con rol ADMIN");
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password(passwordEncoder().encode("password"))
-                .roles("ADMIN")
-                .build();
-
-
-        logger.debug("Creando usuario con rol MANAGER");
-        UserDetails manager = User.builder()
-                .username("manager")
-                .password(passwordEncoder().encode("password"))
-                .roles("MANAGER")
-                .build();
-
-
-        logger.info("Saliendo del método userDetailsService");
-        return new InMemoryUserDetailsManager(user, admin, manager);
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
     }
 
 
