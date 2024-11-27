@@ -99,14 +99,15 @@ public class ProvinceController {
     /**
      * Inserta una nueva provincia en la base de datos.
      *
-     * @param province             Objeto que contiene los datos del formulario.
-     * @param result               Resultados de la validación del formulario.
-     * @param redirectAttributes    Atributos para mensajes flash de redirección.
-     * @param locale               Locale para la internacionalización.
+     * @param province           Objeto que contiene los datos del formulario.
+     * @param result             Resultados de la validación del formulario.
+     * @param redirectAttributes Atributos para mensajes flash de redirección.
+     * @param locale             Locale para la internacionalización.
+     * @param model
      * @return Redirección a la lista de provincias.
      */
     @PostMapping("/insert")
-    public String insertProvince(@Valid @ModelAttribute("province") Province province, BindingResult result, RedirectAttributes redirectAttributes, Locale locale) {
+    public String insertProvince(@Valid @ModelAttribute("province") Province province, BindingResult result, RedirectAttributes redirectAttributes, Locale locale, Model model) {
         logger.info("Insertando nueva provincia con código {}", province.getCode());
         if (result.hasErrors()) {
             return "province-form";  // Devuelve el formulario para mostrar los errores de validación
